@@ -1,6 +1,6 @@
 (function(){
 'use strict';
-document.documentElement.lang='en';
+document.documentElement.lang='en-GB';
 document.documentElement.dir='ltr';
 
 /* ---------- constants ---------- */
@@ -520,9 +520,15 @@ function render(){
   else html=viewEmp();
   var key=(loaded()&&S.session?S.session.role+'|'+S.tab+'|'+S.week:'x|'+(loaded()?'login':'load'))+'|'+(S.nodb?'n':'');
   var animate=key!==S.viewKey;S.viewKey=key;
-  root.className=animate?'anim':'';
+  root.classList.remove('anim','show');
   root.innerHTML='';
   root.innerHTML=html;
+  if(animate){
+    requestAnimationFrame(function(){
+      root.classList.add('anim');
+      requestAnimationFrame(function(){root.classList.add('show');});
+    });
+  }
   restoreDrafts(drafts);
   if(focusCell){
     var target=null;

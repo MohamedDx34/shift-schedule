@@ -118,6 +118,19 @@ body {
   line-height:1.5;
   -webkit-font-smoothing:antialiased;
 }
+#app {
+  opacity:1;
+  transform:translateY(0);
+  transition:opacity .22s ease, transform .22s ease;
+}
+#app.anim {
+  opacity:0;
+  transform:translateY(10px);
+}
+#app.anim.show {
+  opacity:1;
+  transform:translateY(0);
+}
 ::selection {
   background:var(--accent-soft);
   color:var(--fg);
