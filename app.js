@@ -31,6 +31,31 @@ var IC={
 };
 var LOGO=IC.cal;
 
+/* ---------- default roster data (from the uploaded schedule image) ---------- */
+var DEFAULT_ROSTER_DATA={
+  '7028':['م','س','و','و','ص','ص',''],
+  '7034':['س','م','م','ص','ص','ص',''],
+  '7009':['م','م','م','ص','س','م',''],
+  '7019':['م','م','و','س','ص','ص',''],
+  '7015':['ص','ص','س','و','م','و',''],
+  '7036':['ص','م','م','و','م','م',''],
+  '7018':['و','و','و','س','م','ص',''],
+  '7052':['و','و','س','و','ج','و',''],
+  '7038':['و','و','ص','ص','س','م',''],
+  '7039':['س','م','م','م','م','م',''],
+  '7041':['م','م','م','س','م','م',''],
+  '7045':['س','س','م','ج','م','م',''],
+  '7046':['م','م','م','س','م','س',''],
+  '7047':['ص','ص','م','م','و','و',''],
+  '7049':['م','م','ج','م','م','م',''],
+  '7051':['م','س','م','م','ج','س',''],
+  '7050':['م','م','م','م','م','م',''],
+  '7054':['و','و','ج','و','و','و',''],
+  '7053':['و','ج','م','م','م','م',''],
+  '7055':['ج','س','م','س','س','س',''],
+  '7056':['س','م','س','م','م','ج','']
+};
+
 /* ---------- helpers ---------- */
 function $(s,r){return (r||document).querySelector(s);}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -87,16 +112,16 @@ function makeDemoEmployeeList(){
     {code:'7056',name:'Mostafa ALkholi',order:21,counted:true}
   ];
 }
-function createLocalMockDb(){
-  var state={
+function demoSeedState(){
+  var seed={
     config:{adminCode:'7023',adminSalt:'a3f19c5e7b2d4086',adminHash:'c945c8cb2b56a830d24d1673dbf690797a83647eb61f4ab755dd1ba68a1c5cc4',shifts:DEF},
     employees:makeDemoEmployeeList(),
     rows:{},
     requests:[],
     decisions:{},
-    pins:{}
+    pins:{},
+    week:weekStart(todayIso())
   };
-  var curW=weekStart(todayIso());
   var initialSchedule=(window.SEED&&window.SEED.schedule&&window.SEED.schedule.rows)||[
     {code:'7028',days:['م','س','و','و','ص','ص','']},
     {code:'7034',days:['س','م','م','ص','ص','ص','']},
@@ -120,14 +145,17 @@ function createLocalMockDb(){
     {code:'7055',days:['ج','س','م','س','س','س','']},
     {code:'7056',days:['س','م','س','م','م','ج','']}
   ];
+  var rowWeek=(window.SEED&&window.SEED.schedule&&window.SEED.schedule.week)||seed.week;
   initialSchedule.forEach(function(r){
-    state.rows[curW+'_'+r.code]={week:curW,code:r.code,days:r.days.slice()};
+    seed.rows[rowWeek+'_'+r.code]={week:rowWeek,code:r.code,days:r.days.slice()};
+    seed.pins[r.code]={hash:'demo:'+r.code};
   });
+  return seed;
+}
+function createLocalMockDb(){
+  var state=demoSeedState();
   var docListeners={};
   var collListeners={};
-  state.employees.forEach(function(emp){
-    state.pins[emp.code]={hash:'demo:'+emp.code};
-  });
   function docSnapshot(path, value){
     var data=(value===undefined||value===null)?{}:value;
     var exists=value!==undefined&&value!==null&&!(typeof value==='string'&&value==='');
@@ -202,6 +230,8 @@ function createLocalMockDb(){
         emit('requests');
         return Promise.resolve({id:id});
       },
+      limit:function(){return this;},
+      get:function(){return Promise.resolve({docs:listCollection(path),empty:listCollection(path).length===0});},
       doc:function(id){return buildDocRef(path+'/'+id);}
     };
   }
@@ -299,6 +329,29 @@ function saveCfg(patch){
   });
 }
 function setRow(week,code,days){return wr('rows/'+week+'_'+code,function(){return S.db.doc('rows/'+week+'_'+code).set({week:week,code:code,days:days});});}
+async function seedDemoDataIfNeeded(){
+  if(!S.db) return;
+  try{
+    var cfgSnap=await S.db.doc('config/main').get();
+    var empSnap=await S.db.collection('employees').limit(1).get();
+    var rowSnap=await S.db.collection('rows').limit(1).get();
+    if(cfgSnap.exists && !empSnap.empty && !rowSnap.empty) return;
+    var seed=demoSeedState();
+    var writes=[S.db.doc('config/main').set(seed.config)];
+    seed.employees.forEach(function(emp){
+      writes.push(S.db.doc('employees/'+emp.code).set({name:emp.name,order:emp.order,counted:emp.counted!==false}));
+    });
+    Object.keys(seed.pins).forEach(function(code){
+      writes.push(S.db.doc('pins/'+code).set(seed.pins[code]));
+    });
+    Object.keys(seed.rows).forEach(function(id){
+      writes.push(S.db.doc('rows/'+id).set(seed.rows[id]));
+    });
+    await Promise.all(writes);
+  }catch(e){
+    // Ignore seed failures; the app can still work with the live DB.
+  }
+}
 async function checkPw(code,pw){
   var snap=await S.db.doc('pins/'+code).get();
   if(!snap.exists||!snap.data()||!snap.data().hash)return pw===DEFAULT_PW;
@@ -834,6 +887,7 @@ async function boot(){
     S.user={canEdit:function(){return Promise.resolve(true);}};
     S.nodb=false;
   }
+  await seedDemoDataIfNeeded();
   var timer=setTimeout(function(){if(!loaded()){S.slow=true;render();}},10000);
   function done(k){S.ready[k]=true;if(loaded()){clearTimeout(timer);S.slow=false;}render();}
   function onErr(e){S.err=(e&&e.code)||'error';render();}
