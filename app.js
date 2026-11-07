@@ -409,7 +409,18 @@ function tabSchedule(pend){
       }).join('')+'</tr>';
   }).join('');
   var foot='<tr><th class="sh">Daily shortage</th>'+cov.perDay.map(function(x){return '<td class="'+(x?'bad':'')+'">'+(x||'—')+'</td>';}).join('')+'</tr>';
-  var covCard='<section class="card rise" style="--i:5"><div class="card-h"><h2>Coverage and shortages</h2><span class="hint">Scheduled / required. Only staff marked “Counted” are included.</span></div><div class="scroll"><table class="cov"><thead><tr><th></th>'+dayHeads()+'</tr></thead><tbody>'+covRows+'</tbody><tfoot>'+foot+'</tfoot></table></div></section>';
+  var summaryRows=SH.map(function(s){
+    var totalCount=0,totalNeed=0;
+    cov.cells[s].forEach(function(c){totalCount+=c.count;totalNeed+=c.need;});
+    var diff=totalCount-totalNeed;
+    return '<tr><th class="sh"><div class="row"><span class="chip c-'+SC[s]+'">'+LBL[s]+'</span><div class="meta"><span>'+times(s)+'</span><span>'+totalCount+'/'+totalNeed+'</span></div></div></th>'+cov.cells[s].map(function(c){
+      var cls=c.diff<0?'bad':c.diff===0?'ok':'extra';
+      var label=c.diff<0?'Short '+(-c.diff):c.diff>0?'Extra '+c.diff:'Exact';
+      return '<td class="'+cls+'"><strong>'+c.count+'</strong><small>'+label+'</small></td>';
+    }).join('')+'<td class="'+(diff<0?'bad':'ok')+'"><strong>'+(diff<0?diff:diff||0)+'</strong><small>'+(diff<0?'short':'balanced')+'</small></td></tr>';
+  }).join('');
+  var summaryCard='<section class="card rise" style="--i:5"><div class="card-h"><h2>Current week staffing snapshot</h2><span class="hint">Each shift count vs requirement for this week</span></div><div class="scroll"><table class="summary"><thead><tr><th>Shift</th>'+dayHeads()+'<th>Total</th></tr></thead><tbody>'+summaryRows+'</tbody></table></div></section>';
+  var covCard='<section class="card rise" style="--i:6"><div class="card-h"><h2>Coverage and shortages</h2><span class="hint">Scheduled / required. Only staff marked “Counted” are included.</span></div><div class="scroll"><table class="cov"><thead><tr><th></th>'+dayHeads()+'</tr></thead><tbody>'+covRows+'</tbody><tfoot>'+foot+'</tfoot></table></div></section>';
   var rosterRows=S.emps.map(function(e){
     var tds='';
     for(var i=0;i<7;i++){
@@ -424,8 +435,8 @@ function tabSchedule(pend){
     }
     return '<tr><th class="name"><div class="nm"><span class="av sm '+avCls(e.code)+'">'+initial(e.name)+'</span><div><bdi>'+esc(e.name)+'</bdi>'+(e.counted===false?'<em class="tag">Not counted</em>':'')+'<small>'+esc(e.code)+'</small></div></div></th>'+tds+'</tr>';
   }).join('');
-  var rosterCard='<section class="card rise" style="--i:6"><div class="card-h"><h2>Employee roster</h2><span class="hint">AM, MID, PM and LATE are shifts; LV is leave. Edits update shortages instantly.</span></div><div class="scroll"><table class="roster"><thead><tr><th class="name">Employee</th>'+dayHeads()+'</tr></thead><tbody>'+(rosterRows||'<tr><td colspan="8" class="hint">Add employees from the Staff tab.</td></tr>')+'</tbody></table></div></section>';
-  return head+tiles+covCard+rosterCard;
+  var rosterCard='<section class="card rise" style="--i:7"><div class="card-h"><h2>Employee roster</h2><span class="hint">AM, MID, PM and LATE are shifts; LV is leave. Edits update shortages instantly.</span></div><div class="scroll"><table class="roster"><thead><tr><th class="name">Employee</th>'+dayHeads()+'</tr></thead><tbody>'+(rosterRows||'<tr><td colspan="8" class="hint">Add employees from the Staff tab.</td></tr>')+'</tbody></table></div></section>';
+  return head+tiles+summaryCard+covCard+rosterCard;
 }
 function tabRequests(){
   var appr=approvedSet(),STXT={approved:'Approved',rejected:'Rejected',cancelled:'Cancelled'};
@@ -450,16 +461,20 @@ function tabRequests(){
     '<section class="card rise" style="--i:3"><div class="card-h"><h2>Past decisions</h2><div class="seg">'+fl.map(function(x){return '<button type="button" class="'+(S.filter===x[0]?'on':'')+'" data-act="filter" data-v="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</div></div>'+hl+'</section>';
 }
 function tabStaff(){
-  var rows=S.emps.map(function(e){
-    var conf=S.confirmDel===e.code;
-    return '<li><div class="who"><span class="av '+avCls(e.code)+'">'+initial(e.name)+'</span><div><b><bdi>'+esc(e.name)+'</bdi></b><small>Account '+esc(e.code)+'</small></div></div>'+
-      '<div class="li-act"><label class="hint" style="display:flex;align-items:center;gap:8px">Counted in coverage<button type="button" class="sw" role="switch" aria-checked="'+(e.counted!==false)+'" data-act="toggle" data-code="'+esc(e.code)+'" aria-label="Counted in coverage"></button></label>'+
-      '<button class="btn sm" data-act="reset-pw" data-code="'+esc(e.code)+'">Reset password</button>'+
-      '<button class="btn sm danger" data-act="del-emp" data-code="'+esc(e.code)+'">'+(conf?'Confirm delete':'Delete')+'</button></div></li>';
+  var appr=approvedSet();
+  var weekList=S.emps.map(function(e){
+    var dayList='';
+    for(var i=0;i<7;i++){
+      var v=effective(appr,S.week,e.code,i),label=v?LBL[v]:'—';
+      var extra=v?'<span class="mini-time">'+times(v)+'</span>':'<span class="mini-time muted">Off</span>';
+      dayList+='<div class="mini-day"><span class="mini-name">'+DAYS[i].slice(0,2)+'</span><span class="mini-shift '+(v?('c-'+SC[v]):'none')+'">'+label+'</span>'+extra+'</div>';
+    }
+    return '<li class="staff-row"><div class="who"><span class="av '+avCls(e.code)+'">'+initial(e.name)+'</span><div><b><bdi>'+esc(e.name)+'</bdi></b><small>Account '+esc(e.code)+'</small></div></div><div class="mini-week">'+dayList+'</div><div class="li-act"><label class="hint" style="display:flex;align-items:center;gap:8px">Counted in coverage<button type="button" class="sw" role="switch" aria-checked="'+(e.counted!==false)+'" data-act="toggle" data-code="'+esc(e.code)+'" aria-label="Counted in coverage"></button></label><button class="btn sm" data-act="reset-pw" data-code="'+esc(e.code)+'">Reset password</button><button class="btn sm danger" data-act="del-emp" data-code="'+esc(e.code)+'">'+(S.confirmDel===e.code?'Confirm delete':'Delete')+'</button></div></li>';
   }).join('');
   return '<div class="page-head rise" style="--i:1"><h1>Staff</h1></div>'+
     '<section class="card rise" style="--i:2"><div class="card-h"><h2>Add employee</h2><span class="hint">New employees start with password '+DEFAULT_PW+'</span></div><form class="card-b" data-form="add-emp"><div class="form-grid"><div class="field"><label for="ne-name">Name</label><input class="input" id="ne-name" maxlength="60" data-keep></div><div class="field"><label for="ne-code">Account number</label><input class="input ltr" id="ne-code" inputmode="numeric" maxlength="12" data-keep></div></div><div><button class="btn primary" type="submit">Add</button></div></form></section>'+
-    '<section class="card rise" style="--i:3"><div class="card-h"><h2>Team</h2><span class="hint">'+S.emps.length+' employees</span></div>'+(rows?'<ul class="list">'+rows+'</ul>':'<div class="empty">No employees yet.</div>')+'</section>';
+    '<section class="card rise" style="--i:3"><div class="card-h"><h2>Schedule overview</h2><span class="hint">Team shifts for this week</span></div><div class="mini-grid">'+(S.emps.length?S.emps.map(function(e){var summary=''; for(var i=0;i<7;i++){var v=effective(appr,S.week,e.code,i); summary += '<span class="mini-tag '+(v?'c-'+SC[v]:'empty')+'">'+DAYS[i].slice(0,2)+': '+(v?LBL[v]:'—')+'</span>'; } return '<div class="mini-person"><div class="who"><span class="av '+avCls(e.code)+'">'+initial(e.name)+'</span><div><b><bdi>'+esc(e.name)+'</bdi></b><small>'+esc(e.code)+'</small></div></div><div class="mini-stack">'+summary+'</div></div>';}).join(''):'<div class="empty">No employees yet.</div>')+'</div></section>'+
+    '<section class="card rise" style="--i:4"><div class="card-h"><h2>Team</h2><span class="hint">'+S.emps.length+' employees</span></div>'+(weekList?'<ul class="list">'+weekList+'</ul>':'<div class="empty">No employees yet.</div>')+'</section>';
 }
 function tabSettings(){
   var sh=shifts();
