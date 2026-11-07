@@ -499,28 +499,20 @@ function tabSchedule(pend){
     tile(cov.total?'bad':'good','alert','Total shortage',cov.total,cov.total?'open spots across shifts this week':'Coverage is complete this week',2)+
     tile(daysBad?'warn':'good','days','Days with a shortage',daysBad,daysBad?'Need schedule changes':'No understaffed days',3,' <small>of 7</small>')+
     tile('ind','inbox','Pending leave requests',pend,pend?'Waiting for your decision':'Nothing waiting',4)+'</div>';
-  var covRows=SH.map(function(s){
+  var combinedRows=SH.map(function(s){
     var need=Number(sh[KEY[s]].need)||0;
-    return '<tr><th class="sh"><div class="row">'+chip(s)+'<div class="meta"><span>'+times(s)+'</span><span>Needs '+need+'</span></div></div></th>'+
-      cov.cells[s].map(function(c,i){
-        var cls=c.diff<0?'bad':c.diff===0?'ok':'extra',lab=c.diff<0?'Short '+(-c.diff):c.diff===0?'Full':'Over '+c.diff;
-        var pct=c.need>0?Math.min(100,Math.round(c.count/c.need*100)):100;
-        return '<td class="'+cls+(addDays(S.week,i)===t?' today':'')+'"><span class="cnt">'+c.count+'</span><span class="of"> / '+c.need+'</span><small>'+lab+'</small><span class="bar"><i style="width:'+pct+'%"></i></span></td>';
-      }).join('')+'</tr>';
-  }).join('');
-  var foot='<tr><th class="sh">Daily shortage</th>'+cov.perDay.map(function(x){return '<td class="'+(x?'bad':'')+'">'+(x||'—')+'</td>';}).join('')+'</tr>';
-  var summaryRows=SH.map(function(s){
     var totalCount=0,totalNeed=0;
     cov.cells[s].forEach(function(c){totalCount+=c.count;totalNeed+=c.need;});
     var diff=totalCount-totalNeed;
-    return '<tr><th class="sh"><div class="row"><span class="chip c-'+SC[s]+'">'+LBL[s]+'</span><div class="meta"><span>'+times(s)+'</span><span>'+totalCount+'/'+totalNeed+'</span></div></div></th>'+cov.cells[s].map(function(c){
+    return '<tr><th class="sh"><div class="row">'+chip(s)+'<div class="meta"><span>'+times(s)+'</span><span>Needs '+need+'</span></div></div></th>'+cov.cells[s].map(function(c,i){
       var cls=c.diff<0?'bad':c.diff===0?'ok':'extra';
-      var label=c.diff<0?'Short '+(-c.diff):c.diff>0?'Extra '+c.diff:'Exact';
-      return '<td class="'+cls+'"><strong>'+c.count+'</strong><small>'+label+'</small></td>';
-    }).join('')+'<td class="'+(diff<0?'bad':'ok')+'"><strong>'+(diff<0?diff:diff||0)+'</strong><small>'+(diff<0?'short':'balanced')+'</small></td></tr>';
+      var lab=c.diff<0?'Short '+(-c.diff):c.diff===0?'Exact':'Extra '+c.diff;
+      var pct=c.need>0?Math.min(100,Math.round(c.count/c.need*100)):100;
+      return '<td class="'+cls+(addDays(S.week,i)===t?' today':'')+'"><span class="cnt">'+c.count+'</span><span class="of"> / '+c.need+'</span><small>'+lab+'</small><span class="bar"><i style="width:'+pct+'%"></i></span></td>';
+    }).join('')+'<td class="'+(diff<0?'bad':'ok')+'"><span class="cnt">'+totalCount+'</span><span class="of"> / '+totalNeed+'</span><small>'+(diff<0?'Short '+(-diff):diff===0?'Exact':'Extra '+diff)+'</small></td></tr>';
   }).join('');
-  var summaryCard='<section class="card rise" style="--i:5"><div class="card-h"><h2>Current week staffing snapshot</h2><span class="hint">Each shift count vs requirement for this week</span></div><div class="scroll"><table class="summary"><thead><tr><th>Shift</th>'+dayHeads()+'<th>Total</th></tr></thead><tbody>'+summaryRows+'</tbody></table></div></section>';
-  var covCard='<section class="card rise" style="--i:6"><div class="card-h"><h2>Coverage and shortages</h2><span class="hint">Scheduled / required. Only staff marked “Counted” are included.</span></div><div class="scroll"><table class="cov"><thead><tr><th></th>'+dayHeads()+'</tr></thead><tbody>'+covRows+'</tbody><tfoot>'+foot+'</tfoot></table></div></section>';
+  var foot='<tr><th class="sh">Daily shortage</th>'+cov.perDay.map(function(x){return '<td class="'+(x?'bad':'')+'">'+(x||'—')+'</td>';}).join('')+'</tr>';
+  var combinedCard='<section class="card rise" style="--i:5"><div class="card-h"><h2>Current week staffing snapshot</h2><span class="hint">Scheduled / required. Only staff marked “Counted” are included.</span></div><div class="scroll"><table class="cov"><thead><tr><th>Shift</th>'+dayHeads()+'<th>Total</th></tr></thead><tbody>'+combinedRows+'</tbody><tfoot>'+foot+'</tfoot></table></div></section>';
   var q=(S.rosterFilter||'').toLowerCase().trim();
   var rosterRows=S.emps.map(function(e){
     var isHidden=q&&(e.name.toLowerCase().indexOf(q)<0 && String(e.code).indexOf(q)<0);
@@ -539,7 +531,7 @@ function tabSchedule(pend){
   }).join('');
   var rosterToolbar='<div class="roster-toolbar"><div class="search-box">'+IC.search+'<input class="input sm" id="roster-q" placeholder="Filter employee by name or account..." value="'+esc(S.rosterFilter||'')+'" data-act-input="filter-roster" data-keep>'+(S.rosterFilter?'<button class="icon-btn-sm" data-act="clear-roster-filter" title="Clear">✕</button>':'')+'</div><span class="hint count-hint">'+S.emps.length+' employees</span></div>';
   var rosterCard='<section class="card rise" style="--i:7"><div class="card-h"><h2>Employee roster</h2><span class="hint">AM, MID, PM and LATE are shifts; LV is leave. Shortcuts: 1(AM), 2(MID), 3(PM), 4(LATE), 5(LV), 0(Off).</span></div>'+rosterToolbar+'<div class="scroll"><table class="roster"><thead><tr><th class="name">Employee</th>'+dayHeads()+'</tr></thead><tbody>'+(rosterRows||'<tr><td colspan="8" class="hint">Add employees from the Staff tab.</td></tr>')+'</tbody></table></div></section>';
-  return head+tiles+summaryCard+covCard+rosterCard;
+  return head+tiles+combinedCard+rosterCard;
 }
 function tabRequests(){
   var appr=approvedSet(),STXT={approved:'Approved',rejected:'Rejected',cancelled:'Cancelled'};
