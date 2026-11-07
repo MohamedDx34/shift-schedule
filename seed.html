@@ -2,27 +2,56 @@
 <html lang="en"><head><meta charset="utf-8"><title>Seed database</title></head>
 <body style="font-family:system-ui,sans-serif;max-width:560px;margin:40px auto;padding:0 16px">
 <h1>Seed database</h1>
-<p>Run once after setting up config.js. Creates the admin account and the employee list. Delete this file afterwards.</p>
-<button id="go">Write seed data</button>
+<p>Run after setting up config.js. Creates the admin account, employee list, and the shift schedule.</p>
+<div style="display:flex;gap:10px;margin-bottom:16px;">
+  <button id="go" style="padding:8px 16px;cursor:pointer">Write seed data (Config & Staff)</button>
+  <button id="seed-schedule" style="padding:8px 16px;cursor:pointer;background:#0062c4;color:#fff;border:none;border-radius:4px;">Write Shift Schedule (2026-11-07)</button>
+</div>
 <pre id="out"></pre>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
 <script src="seed-data.js"></script>
 <script>
+var dbInstance = null;
+function getDb() {
+  if (!dbInstance) {
+    firebase.initializeApp(window.FIREBASE_CONFIG);
+    dbInstance = firebase.firestore();
+  }
+  return dbInstance;
+}
+
 document.getElementById('go').onclick = async function () {
   var out = document.getElementById('out');
   try {
-    firebase.initializeApp(window.FIREBASE_CONFIG);
-    var db = firebase.firestore();
-    if ((await db.doc('config/main').get()).exists) { out.textContent = 'Already seeded. Nothing written.'; return; }
+    var db = getDb();
+    if ((await db.doc('config/main').get()).exists) { out.textContent = 'Config already exists. Skipping config.'; }
     var b = db.batch();
     b.set(db.doc('config/main'), SEED.config);
     SEED.employees.forEach(function (e) {
       b.set(db.doc('employees/' + e.code), { name: e.name, order: e.order, counted: true });
     });
     await b.commit();
-    out.textContent = 'Done. ' + SEED.employees.length + ' employees written. Delete seed.html and seed-data.js.';
+    out.textContent = 'Done! ' + SEED.employees.length + ' employees written successfully.';
+  } catch (e) { out.textContent = 'Failed: ' + e.message; }
+};
+
+document.getElementById('seed-schedule').onclick = async function () {
+  var out = document.getElementById('out');
+  try {
+    var db = getDb();
+    var week = SEED.schedule.week;
+    var b = db.batch();
+    SEED.schedule.rows.forEach(function (r) {
+      b.set(db.doc('rows/' + week + '_' + r.code), {
+        week: week,
+        code: r.code,
+        days: r.days
+      });
+    });
+    await b.commit();
+    out.textContent = 'Done! Shift schedule for week ' + week + ' (' + SEED.schedule.rows.length + ' employees) written to Firestore.';
   } catch (e) { out.textContent = 'Failed: ' + e.message; }
 };
 </script></body></html>

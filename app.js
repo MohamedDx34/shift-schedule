@@ -21,7 +21,13 @@ var IC={
   alert:svg('<path d="M12 3.5 2.8 19.5h18.4L12 3.5z"/><path d="M12 10v4.5M12 17.2v.1"/>'),
   days:svg('<rect x="3.5" y="5" width="17" height="15" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4M8 14h.1M12 14h.1M16 14h.1M8 17h.1M12 17h.1"/>'),
   inbox:svg('<path d="M3.5 13.5 6 5.5h12l2.5 8"/><path d="M3.5 13.5V18a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5v-4.5H15a3 3 0 0 1-6 0H3.5z"/>'),
-  check:svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>')
+  check:svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  users:svg('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'),
+  gear:svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+  search:svg('<circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>'),
+  prev:svg('<polyline points="15 18 9 12 15 6"></polyline>'),
+  next:svg('<polyline points="9 18 15 12 9 6"></polyline>'),
+  print:svg('<polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect>')
 };
 var LOGO=IC.cal;
 
@@ -90,6 +96,33 @@ function createLocalMockDb(){
     decisions:{},
     pins:{}
   };
+  var curW=weekStart(todayIso());
+  var initialSchedule=(window.SEED&&window.SEED.schedule&&window.SEED.schedule.rows)||[
+    {code:'7028',days:['م','س','و','و','ص','ص','']},
+    {code:'7034',days:['س','م','م','ص','ص','ص','']},
+    {code:'7009',days:['م','م','م','ص','س','م','']},
+    {code:'7019',days:['م','م','و','س','ص','ص','']},
+    {code:'7015',days:['ص','ص','س','و','م','و','']},
+    {code:'7036',days:['ص','م','م','و','م','م','']},
+    {code:'7018',days:['و','و','و','س','م','ص','']},
+    {code:'7052',days:['و','و','س','و','ج','و','']},
+    {code:'7038',days:['و','و','ص','ص','س','م','']},
+    {code:'7039',days:['س','م','م','م','م','م','']},
+    {code:'7041',days:['م','م','م','س','م','م','']},
+    {code:'7045',days:['س','س','م','ج','م','م','']},
+    {code:'7046',days:['م','م','م','س','م','س','']},
+    {code:'7047',days:['ص','ص','م','م','و','و','']},
+    {code:'7049',days:['م','م','ج','م','م','م','']},
+    {code:'7051',days:['م','س','م','م','ج','س','']},
+    {code:'7050',days:['م','م','م','م','م','م','']},
+    {code:'7054',days:['و','و','ج','و','و','و','']},
+    {code:'7053',days:['و','ج','م','م','م','م','']},
+    {code:'7055',days:['ج','س','م','س','س','س','']},
+    {code:'7056',days:['س','م','س','م','م','ج','']}
+  ];
+  initialSchedule.forEach(function(r){
+    state.rows[curW+'_'+r.code]={week:curW,code:r.code,days:r.days.slice()};
+  });
   var docListeners={};
   var collListeners={};
   state.employees.forEach(function(emp){
@@ -317,14 +350,20 @@ function viewLogin(){
 }
 function weekBar(){
   var cur=weekStart(todayIso())===S.week;
-  return '<div class="weekbar"><button class="icon-btn" data-act="wk" data-d="-1" aria-label="Previous week">‹</button>'+
-    '<div class="label">'+esc(fmtRange(S.week))+'</div>'+
-    '<button class="icon-btn" data-act="wk" data-d="1" aria-label="Next week">›</button>'+
-    (cur?'':'<button class="btn sm" data-act="wk-today">This week</button>')+'</div>';
+  return '<div class="weekbar">'+
+    '<button class="icon-btn" data-act="wk" data-d="-1" aria-label="Previous week">'+IC.prev+'</button>'+
+    '<div class="label"><span class="cal-ico">'+IC.cal+'</span>'+esc(fmtRange(S.week))+'</div>'+
+    '<button class="icon-btn" data-act="wk" data-d="1" aria-label="Next week">'+IC.next+'</button>'+
+    (cur?'':'<button class="btn sm pill-today" data-act="wk-today">This week</button>')+
+    '</div>';
 }
 function dayHeads(){
   var t=todayIso(),h='';
-  for(var i=0;i<7;i++){var d=addDays(S.week,i);h+='<th class="'+(d===t?'today':'')+'">'+DAYS[i]+'<small>'+fmtShort(d)+'</small></th>';}
+  for(var i=0;i<7;i++){
+    var d=addDays(S.week,i);
+    var isT=d===t;
+    h+='<th class="th-day '+(isT?'today':'')+'"><div class="th-day-in"><span class="dn">'+DAYS[i]+'</span>'+(isT?'<span class="today-badge">Today</span>':'<small class="dd">'+fmtShort(d)+'</small>')+'</div></th>';
+  }
   return h;
 }
 function empName(code){var e=S.emps.find(function(x){return x.code===code;});return e?e.name:code;}
@@ -354,7 +393,7 @@ function viewEmp(){
   }).join('')+'</ul>':'<div class="empty">No requests yet.</div>';
   var first=String(emp.name||'').split(' ')[0];
   return topbar('<span class="who-chip"><bdi>'+esc(emp.name)+'</bdi></span><button class="btn sm" data-act="logout">Sign out</button>')+
-  '<main class="wrap"><section class="hero rise" style="--i:0"><div><p class="hi">Welcome back</p><h1><bdi>'+esc(first)+'</bdi></h1></div>'+nxHtml+'</section>'+
+  '<main class="wrap"><div class="tab-pane"><section class="hero rise" style="--i:0"><div><p class="hi">Welcome back</p><h1><bdi>'+esc(first)+'</bdi></h1></div>'+nxHtml+'</section>'+
   '<div class="page-head rise" style="--i:1"><div><h1>My schedule</h1></div>'+weekBar()+'</div>'+
   '<div class="days">'+cards+'</div>'+
   '<section class="card rise" style="--i:9"><div class="card-h"><h2>Request leave</h2><span class="hint">You get a reply once the admin reviews it</span></div><form class="card-b" data-form="leave"><div class="form-grid">'+
@@ -367,18 +406,18 @@ function viewEmp(){
     '<div class="field"><label for="ep-0">Current password</label><input class="input ltr" id="ep-0" type="password" autocomplete="current-password" data-keep></div>'+
     '<div class="field"><label for="ep-1">New password</label><input class="input ltr" id="ep-1" type="password" autocomplete="new-password" data-keep></div>'+
     '<div class="field"><label for="ep-2">Confirm new password</label><input class="input ltr" id="ep-2" type="password" autocomplete="new-password" data-keep></div></div>'+
-    '<div><button class="btn" type="submit">Change password</button></div></form></section></main>';
+    '<div><button class="btn" type="submit">Change password</button></div></form></section></div></main>';
 }
 
 /* admin */
 function viewAdmin(){
   var pend=S.reqs.filter(function(r){return statusOf(r)==='pending';}).length;
-  var tabs=[['schedule','Schedule'],['requests','Requests'],['staff','Staff'],['settings','Settings']];
+  var tabs=[['schedule','Schedule',IC.cal],['requests','Requests',IC.inbox],['staff','Staff',IC.users],['settings','Settings',IC.gear]];
   var seg='<div class="tabs rise" style="--i:0"><div class="seg" role="tablist">'+tabs.map(function(x){
-    return '<button type="button" role="tab" aria-selected="'+(S.tab===x[0])+'" class="'+(S.tab===x[0]?'on':'')+'" data-act="tab" data-v="'+x[0]+'">'+x[1]+(x[0]==='requests'&&pend?'<span class="badge">'+pend+'</span>':'')+'</button>';
+    return '<button type="button" role="tab" aria-selected="'+(S.tab===x[0])+'" class="'+(S.tab===x[0]?'on':'')+'" data-act="tab" data-v="'+x[0]+'"><span class="tab-ic">'+x[2]+'</span><span>'+x[1]+'</span>'+(x[0]==='requests'&&pend?'<span class="badge">'+pend+'</span>':'')+'</button>';
   }).join('')+'</div></div>';
   var body=S.tab==='requests'?tabRequests():S.tab==='staff'?tabStaff():S.tab==='settings'?tabSettings():tabSchedule(pend);
-  return topbar('<span class="who-chip">Admin · <bdi>'+esc(S.cfg.adminCode||'')+'</bdi></span><button class="btn sm" data-act="logout">Sign out</button>')+'<main class="wrap">'+seg+body+'</main>';
+  return topbar('<span class="who-chip">Admin · <bdi>'+esc(S.cfg.adminCode||'')+'</bdi></span><button class="btn sm" data-act="logout">Sign out</button>')+'<main class="wrap">'+seg+'<div class="tab-pane" id="tab-pane">'+body+'</div></main>';
 }
 function tile(cls,icon,k,v,s,i,suffix){
   return '<div class="tile rise '+cls+'" style="--i:'+i+'"><span class="ic">'+IC[icon]+'</span><span class="k">'+k+'</span><span class="v"><span data-count="'+v+'">'+v+'</span>'+(suffix||'')+'</span><span class="s">'+s+'</span></div>';
@@ -386,15 +425,23 @@ function tile(cls,icon,k,v,s,i,suffix){
 function tabSchedule(pend){
   if(!hasWeek(S.week)){
     var prev=addDays(S.week,-7);
-    return '<div class="page-head rise" style="--i:1"><h1>Weekly schedule</h1>'+weekBar()+'</div>'+
+    var blankRoster=S.emps.map(function(e){
+      var cells='';
+      for(var i=0;i<7;i++){
+        cells+='<td class="'+(addDays(S.week,i)===todayIso()?'today':'')+'"><select class="sel c-none" data-sel data-code="'+esc(e.code)+'" data-i="'+i+'" aria-label="'+esc(e.name)+' '+DAYS[i]+'" tabindex="0"><option value="" selected>—</option><option value="ص">AM</option><option value="و">MID</option><option value="م">PM</option><option value="س">LATE</option><option value="ج">LV</option></select></td>';
+      }
+      return '<tr><th class="name"><div class="nm"><span class="av sm '+avCls(e.code)+'">'+initial(e.name)+'</span><div><bdi>'+esc(e.name)+'</bdi><small>'+esc(e.code)+'</small></div></div></th>'+cells+'</tr>';
+    }).join('');
+    return '<div class="page-head rise" style="--i:1"><div><h1>Weekly schedule</h1></div><div class="page-actions">'+weekBar()+'</div></div>'+
       '<section class="card rise" style="--i:2"><div class="empty"><h2>No schedule for this week</h2><p>Start from last week’s schedule and edit it, or create a blank one.</p><div class="li-act" style="justify-content:center">'+
       (hasWeek(prev)?'<button class="btn primary" data-act="create-week" data-mode="copy">Copy last week</button>':'')+
-      '<button class="btn" data-act="create-week" data-mode="blank">Blank schedule</button></div></div></section>';
+      '<button class="btn" data-act="create-week" data-mode="blank">Blank schedule</button></div></div></section>'+
+      '<section class="card rise" style="--i:3"><div class="card-h"><h2>Employee roster</h2><span class="hint">All staff are shown automatically for this week.</span></div><div class="scroll"><table class="roster"><thead><tr><th class="name">Employee</th>'+dayHeads()+'</tr></thead><tbody>'+blankRoster+'</tbody></table></div></section>';
   }
   var appr=approvedSet(),pset=pendingSet(),cov=coverage(S.week,appr),t=todayIso(),sh=shifts();
   var daysBad=cov.perDay.filter(function(x){return x>0;}).length;
   var sub=cov.worst?'Biggest shortage: '+DAYS[cov.worst.i]+' on the '+LBL[cov.worst.s]+' shift (short by '+(-cov.worst.diff)+')':'All shifts are covered this week';
-  var head='<div class="page-head rise" style="--i:1"><div><h1>Weekly schedule</h1><p class="sub">'+esc(sub)+'</p></div>'+weekBar()+'</div>';
+  var head='<div class="page-head rise" style="--i:1"><div><h1>Weekly schedule</h1><p class="sub">'+esc(sub)+'</p></div><div class="page-actions">'+weekBar()+'<button class="btn sm secondary print-btn" data-act="print" title="Print or save as PDF">'+IC.print+'<span>Print</span></button></div></div>';
   var tiles='<div class="tiles">'+
     tile(cov.total?'bad':'good','alert','Total shortage',cov.total,cov.total?'open spots across shifts this week':'Coverage is complete this week',2)+
     tile(daysBad?'warn':'good','days','Days with a shortage',daysBad,daysBad?'Need schedule changes':'No understaffed days',3,' <small>of 7</small>')+
@@ -421,7 +468,9 @@ function tabSchedule(pend){
   }).join('');
   var summaryCard='<section class="card rise" style="--i:5"><div class="card-h"><h2>Current week staffing snapshot</h2><span class="hint">Each shift count vs requirement for this week</span></div><div class="scroll"><table class="summary"><thead><tr><th>Shift</th>'+dayHeads()+'<th>Total</th></tr></thead><tbody>'+summaryRows+'</tbody></table></div></section>';
   var covCard='<section class="card rise" style="--i:6"><div class="card-h"><h2>Coverage and shortages</h2><span class="hint">Scheduled / required. Only staff marked “Counted” are included.</span></div><div class="scroll"><table class="cov"><thead><tr><th></th>'+dayHeads()+'</tr></thead><tbody>'+covRows+'</tbody><tfoot>'+foot+'</tfoot></table></div></section>';
+  var q=(S.rosterFilter||'').toLowerCase().trim();
   var rosterRows=S.emps.map(function(e){
+    var isHidden=q&&(e.name.toLowerCase().indexOf(q)<0 && String(e.code).indexOf(q)<0);
     var tds='';
     for(var i=0;i<7;i++){
       var d=addDays(S.week,i),v=effective(appr,S.week,e.code,i),td,isP=pset.has(e.code+'|'+d);
@@ -433,9 +482,10 @@ function tabSchedule(pend){
       }
       tds+='<td class="'+(d===t?'today':'')+'">'+td+'</td>';
     }
-    return '<tr><th class="name"><div class="nm"><span class="av sm '+avCls(e.code)+'">'+initial(e.name)+'</span><div><bdi>'+esc(e.name)+'</bdi>'+(e.counted===false?'<em class="tag">Not counted</em>':'')+'<small>'+esc(e.code)+'</small></div></div></th>'+tds+'</tr>';
+    return '<tr'+(isHidden?' style="display:none"':'')+'><th class="name"><div class="nm"><span class="av sm '+avCls(e.code)+'">'+initial(e.name)+'</span><div><bdi>'+esc(e.name)+'</bdi>'+(e.counted===false?'<em class="tag">Not counted</em>':'')+'<small>'+esc(e.code)+'</small></div></div></th>'+tds+'</tr>';
   }).join('');
-  var rosterCard='<section class="card rise" style="--i:7"><div class="card-h"><h2>Employee roster</h2><span class="hint">AM, MID, PM and LATE are shifts; LV is leave. Edits update shortages instantly.</span></div><div class="scroll"><table class="roster"><thead><tr><th class="name">Employee</th>'+dayHeads()+'</tr></thead><tbody>'+(rosterRows||'<tr><td colspan="8" class="hint">Add employees from the Staff tab.</td></tr>')+'</tbody></table></div></section>';
+  var rosterToolbar='<div class="roster-toolbar"><div class="search-box">'+IC.search+'<input class="input sm" id="roster-q" placeholder="Filter employee by name or account..." value="'+esc(S.rosterFilter||'')+'" data-act-input="filter-roster" data-keep>'+(S.rosterFilter?'<button class="icon-btn-sm" data-act="clear-roster-filter" title="Clear">✕</button>':'')+'</div><span class="hint count-hint">'+S.emps.length+' employees</span></div>';
+  var rosterCard='<section class="card rise" style="--i:7"><div class="card-h"><h2>Employee roster</h2><span class="hint">AM, MID, PM and LATE are shifts; LV is leave. Shortcuts: 1(AM), 2(MID), 3(PM), 4(LATE), 5(LV), 0(Off).</span></div>'+rosterToolbar+'<div class="scroll"><table class="roster"><thead><tr><th class="name">Employee</th>'+dayHeads()+'</tr></thead><tbody>'+(rosterRows||'<tr><td colspan="8" class="hint">Add employees from the Staff tab.</td></tr>')+'</tbody></table></div></section>';
   return head+tiles+summaryCard+covCard+rosterCard;
 }
 function tabRequests(){
@@ -457,7 +507,7 @@ function tabRequests(){
   }).join('')+'</ul>':'<div class="empty">No past decisions.</div>';
   return '<div class="page-head rise" style="--i:1"><h1>Leave requests</h1></div>'+
     '<section class="card rise" style="--i:1"><div class="card-h"><h2>Add leave for an employee</h2><span class="hint">Approved immediately</span></div><form class="card-b" data-form="admin-leave"><div class="form-grid"><div class="field"><label for="al-emp">Employee</label><select class="input" id="al-emp" data-keep><option value="">Choose…</option>'+S.emps.map(function(e){return '<option value="'+esc(e.code)+'">'+esc(e.name)+' ('+esc(e.code)+')</option>';}).join('')+'</select></div><div class="field"><label for="al-from">From</label><input class="input" id="al-from" type="date" data-keep></div><div class="field"><label for="al-to">To (optional)</label><input class="input" id="al-to" type="date" data-keep></div></div><div class="field"><label for="al-note">Note (optional)</label><textarea class="input" id="al-note" maxlength="300" data-keep></textarea></div><div><button class="btn primary" type="submit">Add leave</button></div></form></section>'+
-    '<section class="card rise" style="--i:2"><div class="card-h"><h2>Awaiting decision</h2><span class="hint">Impact is calculated from the current schedule</span></div>'+pl+'</section>'+
+    '<section class="card rise" style="--i:2"><div class="card-h"><h2>Awaiting decision</h2><div class="li-act">'+(pend.length>1?'<button class="btn good sm" data-act="approve-all-pending">Approve all ('+pend.length+')</button>':'')+'<span class="hint">Impact is calculated from current schedule</span></div></div>'+pl+'</section>'+
     '<section class="card rise" style="--i:3"><div class="card-h"><h2>Past decisions</h2><div class="seg">'+fl.map(function(x){return '<button type="button" class="'+(S.filter===x[0]?'on':'')+'" data-act="filter" data-v="'+x[0]+'">'+x[1]+'</button>';}).join('')+'</div></div>'+hl+'</section>';
 }
 function tabStaff(){
@@ -521,13 +571,19 @@ function render(){
   var key=(loaded()&&S.session?S.session.role+'|'+S.tab+'|'+S.week:'x|'+(loaded()?'login':'load'))+'|'+(S.nodb?'n':'');
   var animate=key!==S.viewKey;S.viewKey=key;
   root.classList.remove('anim','show');
+  root.setAttribute('data-state','rendering');
   root.innerHTML='';
   root.innerHTML=html;
   if(animate){
     requestAnimationFrame(function(){
       root.classList.add('anim');
-      requestAnimationFrame(function(){root.classList.add('show');});
+      requestAnimationFrame(function(){
+        root.classList.add('show');
+        root.removeAttribute('data-state');
+      });
     });
+  } else {
+    root.removeAttribute('data-state');
   }
   restoreDrafts(drafts);
   if(focusCell){
@@ -666,6 +722,22 @@ async function act(a,b){
       if(S.confirmDel!==c3){S.confirmDel=c3;render();setTimeout(function(){if(S.confirmDel===c3){S.confirmDel=null;render();}},4000);return;}
       S.confirmDel=null;await S.db.doc('employees/'+c3).delete();toast('Employee deleted');
     }
+    else if(a==='print'){
+      window.print();
+    }
+    else if(a==='clear-roster-filter'){
+      S.rosterFilter='';
+      render();
+    }
+    else if(a==='approve-all-pending'){
+      var pends=S.reqs.filter(function(r){return statusOf(r)==='pending';});
+      if(!pends.length)return;
+      for(var q=0;q<pends.length;q++){
+        var rid=pends[q].id;
+        await wr('decisions/'+rid,function(){return S.db.doc('decisions/'+rid).set({status:'approved',at:Date.now()});});
+      }
+      toast('Approved '+pends.length+' requests');
+    }
   }catch(e){fail(e);}
 }
 async function onSel(el){
@@ -713,6 +785,32 @@ document.addEventListener('keydown',function(e){
     var dx=e.key==='ArrowRight'?1:(e.key==='ArrowLeft'?-1:0);
     var dy=e.key==='ArrowDown'?1:(e.key==='ArrowUp'?-1:0);
     moveScheduleFocus(t,dx,dy);
+    return;
+  }
+  var k=e.key.toLowerCase();
+  var map={'1':'ص','a':'ص','2':'و','m':'و','3':'م','p':'م','4':'س','l':'س','5':'ج','v':'ج','0':'','delete':'','backspace':''};
+  if(map[k]!==undefined){
+    e.preventDefault();
+    t.value=map[k];
+    suppressScheduleRender(200);
+    onSel(t);
+  }
+});
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(t.matches&&t.matches('[data-act-input="filter-roster"]')){
+    S.rosterFilter=t.value;
+    var val=t.value.toLowerCase().trim();
+    var rows=document.querySelectorAll('.roster tbody tr');
+    var visible=0;
+    rows.forEach(function(r){
+      var text=r.textContent.toLowerCase();
+      var match=!val||text.indexOf(val)>=0;
+      r.style.display=match?'':'none';
+      if(match)visible++;
+    });
+    var countEl=document.querySelector('.count-hint');
+    if(countEl)countEl.textContent=visible+' of '+S.emps.length+' employees';
   }
 });
 document.addEventListener('click',function(e){var b=e.target.closest('[data-act]');if(b)act(b.dataset.act,b);});
